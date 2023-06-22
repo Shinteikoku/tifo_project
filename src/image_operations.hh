@@ -10,6 +10,10 @@
 #ifndef TIFO_PROJECT_IMAGE_OPERATIONS_HH
 #define TIFO_PROJECT_IMAGE_OPERATIONS_HH
 
+#define RED 0
+#define GREEN 1
+#define BLUE 2
+
 namespace tifo
 {
     void saturation(hsv24_image& image, double s);

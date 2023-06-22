@@ -152,31 +152,28 @@ namespace tifo
     }
 
 
-    tifo::rgb24_image* swap_red_blue(tifo::rgb24_image& image)
+    tifo::rgb24_image* swap_channels(tifo::rgb24_image& image, int channel1, int channel2)
     {
         auto new_image = new rgb24_image(image.sx, image.sy);
-        for (int y = 0; y < image.sy; ++y)
+        for (int i = 0; i < image.length; i += 3)
         {
-            for (int x = 0; x < image.sx; ++x)
-            {
-                new_image->pixels[(y * image.sx + x) * 3 + 0] = image.pixels[(y * image.sx + x) * 3 + 2];  // R = B
-                new_image->pixels[(y * image.sx + x) * 3 + 1] = image.pixels[(y * image.sx + x) * 3 + 1];  // G = G
-                new_image->pixels[(y * image.sx + x) * 3 + 2] = image.pixels[(y * image.sx + x) * 3 + 0];  // B = R
-            }
+            auto tmp = image.pixels[i + channel1];
+            new_image->pixels[i + channel1] = image.pixels[i + channel2];
+            new_image->pixels[i + channel2] = tmp;
         }
         return new_image;
     }
 
-    void increase_red(rgb24_image& image, int x)
+    void increase_channel(rgb24_image& image, int x, int channel)
     {
         for (int i = 0; i < image.length; i += 3)
-            image.pixels[i] = std::clamp(image.pixels[i] + x, 0, 255);
+            image.pixels[i + channel] = std::clamp(image.pixels[i + channel] + x, 0, 255);
     }
 
     rgb24_image* ir_filter(rgb24_image& image)
     {
         // Red <=> Blue
-        auto swap = swap_red_blue(image);
+        auto swap = swap_channels(image, RED, BLUE);
         // Increase contrast
         auto contrast = increase_contrast(*swap, 1.3f);
         // Desaturate blue
@@ -185,7 +182,7 @@ namespace tifo
         // Back to rgb
         auto res = hsv_to_rgb(*hsv);
         // Tint the image
-        increase_red(*res, 30);
+        increase_channel(*res, 30, RED);
         return res;
     }
 
@@ -195,9 +192,9 @@ namespace tifo
 
         for (int i = 0; i < image.length; i += 3)
         {
-            new_image->pixels[i] = 255 - image.pixels[i];
-            new_image->pixels[i + 1] = 255 - image.pixels[i + 1];
-            new_image->pixels[i + 2] = 255 - image.pixels[i + 2];
+            new_image->pixels[i + RED] = 255 - image.pixels[i + RED];
+            new_image->pixels[i + GREEN] = 255 - image.pixels[i + GREEN];
+            new_image->pixels[i + BLUE] = 255 - image.pixels[i + BLUE];
         }
 
         return new_image;
