@@ -189,4 +189,18 @@ namespace tifo
         return res;
     }
 
+    rgb24_image* negative_filter(rgb24_image& image)
+    {
+        auto new_image = new rgb24_image(image.sx, image.sy);
+
+        for (int i = 0; i < image.length; i += 3)
+        {
+            new_image->pixels[i] = 255 - image.pixels[i];
+            new_image->pixels[i + 1] = 255 - image.pixels[i + 1];
+            new_image->pixels[i + 2] = 255 - image.pixels[i + 2];
+        }
+
+        return new_image;
+    }
+
 }

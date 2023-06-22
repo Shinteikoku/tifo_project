@@ -15,6 +15,7 @@ namespace tifo
     void saturation(hsv24_image& image, double s);
     rgb24_image* argentique_filter(tifo::rgb24_image& image);
     rgb24_image* ir_filter(rgb24_image& image);
+    rgb24_image* negative_filter(rgb24_image& image);
 }
 
 #endif //TIFO_PROJECT_IMAGE_OPERATIONS_HH
