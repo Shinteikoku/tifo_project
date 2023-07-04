@@ -14,8 +14,8 @@ namespace tifo
     rgb24_image* gray_to_rgb_color(std::vector<gray8_image*> colors);
     std::vector<gray8_image*> hsv_to_gray_color(hsv24_image& image);
     hsv24_image* gray_to_hsv_color(std::vector<gray8_image*> colors);
-    hsv24_image* rgb_to_hsv(rgb24_image& image);
-    rgb24_image* hsv_to_rgb(hsv24_image& image);
-}
+    void rgb_to_hsv(rgb24_image& image);
+    void hsv_to_rgb(hsv24_image& image);
+} // namespace tifo
 
 #endif //TIFO_PROJECT_IMAGE_CONVERT_HH

@@ -14,11 +14,15 @@
 
 namespace tifo {
 
-    gray8_image::gray8_image(int _sx, int _sy) {
+    gray8_image::gray8_image(int _sx, int _sy)
+    {
         sx = _sx;
         sy = _sy;
 
-        length = sx*sy;
+        length = sx * sy;
+
+        length = (length + TL_IMAGE_ALIGNMENT - 1) & ~(TL_IMAGE_ALIGNMENT - 1);
+
         pixels = (GRAY8)aligned_alloc(TL_IMAGE_ALIGNMENT, length);
     }
 
@@ -34,12 +38,21 @@ namespace tifo {
         return pixels;
     }
 
-    rgb24_image::rgb24_image(int _sx, int _sy) {
+    rgb24_image::rgb24_image(int _sx, int _sy)
+    {
         sx = _sx;
         sy = _sy;
 
-        length = sx*sy*3;
+        length = sx * sy * 3;
+
+        length = (length + TL_IMAGE_ALIGNMENT - 1) & ~(TL_IMAGE_ALIGNMENT - 1);
+
         pixels = (RGB8)aligned_alloc(TL_IMAGE_ALIGNMENT, length);
+
+        if (!pixels)
+        {
+            perror("aligned_alloc failed");
+        }
     }
 
     rgb24_image::~rgb24_image() {
@@ -54,23 +67,5 @@ namespace tifo {
         return pixels;
     }
 
-    hsv24_image::hsv24_image(int _sx, int _sy) {
-        sx = _sx;
-        sy = _sy;
 
-        length = sx*sy*3;
-        pixels = (HSV8)aligned_alloc(TL_IMAGE_ALIGNMENT, length);
-    }
-
-    hsv24_image::~hsv24_image() {
-        free(pixels);
-    }
-
-    const HSV8& hsv24_image::get_buffer() const {
-        return pixels;
-    }
-
-    HSV8& hsv24_image::get_buffer() {
-        return pixels;
-    }
 }

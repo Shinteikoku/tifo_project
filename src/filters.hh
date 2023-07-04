@@ -12,11 +12,14 @@
 
 namespace tifo
 {
-    gray8_image* sobel_filter(tifo::gray8_image& image);
-    gray8_image* laplacien_filter(tifo::gray8_image& image, float k);
-    rgb24_image* rgb_laplacian(rgb24_image& image, float k);
-    rgb24_image* rgb_apply_filter(rgb24_image& image, std::function<gray8_image*(gray8_image&)> filter);
-    rgb24_image* rgb_apply_filter_to_gray(rgb24_image& image, std::function<gray8_image*(gray8_image&)> filter);
-}
+    void sobel_filter(tifo::gray8_image& image);
+    void laplacien_filter(tifo::gray8_image& image, float k);
+    void rgb_laplacian(rgb24_image& image, float k);
+    void rgb_apply_filter(rgb24_image& image,
+                          std::function<gray8_image*(gray8_image&)> filter);
+    void
+    rgb_apply_filter_to_gray(rgb24_image& image,
+                             std::function<gray8_image*(gray8_image&)> filter);
+} // namespace tifo
 
 #endif //TIFO_PROJECT_FILTERS_HH

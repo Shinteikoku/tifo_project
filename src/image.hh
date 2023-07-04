@@ -24,7 +24,6 @@ namespace tifo {
 
     typedef uint8_t* __restrict__ __attribute__((aligned(TL_IMAGE_ALIGNMENT))) GRAY8;
     typedef uint8_t* __restrict__ __attribute__((aligned(TL_IMAGE_ALIGNMENT))) RGB8;
-    typedef uint8_t* __restrict__ __attribute__((aligned(TL_IMAGE_ALIGNMENT))) HSV8;
 
 /**
  * Gray scale image with pixels on 8 bits.
@@ -109,42 +108,7 @@ namespace tifo {
         RGB8 pixels;
     };
 
+    typedef rgb24_image hsv24_image;
 
-    class hsv24_image {
-
-    public:
-        /**
-         * Image creation and allocation.
-         * @param sx width of the image in pixel
-         * @param sy height of the image in pixel
-        */
-        hsv24_image(int sx, int sy);
-        ~hsv24_image();
-
-        /**
-         * Gives the pixel buffer aligned according to TL_IMAGE_ALIGNMENT
-         * macro.
-         * @return the pixel buffer.
-         */
-        const HSV8& get_buffer() const;
-
-        /**
-         * Gives the pixel buffer aligned according to TL_IMAGE_ALIGNMENT
-         * macro.
-         * @return the pixel buffer.
-         */
-        HSV8& get_buffer();
-
-
-    public:
-        /**Width of the image in pixels.*/
-        int sx;
-        /**Height of the image in pixels.*/
-        int sy;
-        /**Size of the reserved area in bytes.*/
-        int length;
-        /**Buffer*/
-        HSV8 pixels;
-    };
 }
 #endif	/* IMAGE_HH */
