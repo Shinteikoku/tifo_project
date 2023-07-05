@@ -4,6 +4,9 @@ project(tifo_project)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -O3 -g -std=c++23 -lm -m64 -march=native")
 
+# Set path to Eigen
+include_directories(/usr/local/include/eigen3)
+
 # Set path to Qt
 list(APPEND CMAKE_PREFIX_PATH "/usr/local/opt/qt@5")
 

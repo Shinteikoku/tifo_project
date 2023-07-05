@@ -9,9 +9,9 @@
 
 namespace tifo
 {
-    void saturation(hsv24_image& image, int sat)
+    /*void saturation(hsv24_image& image, int satur)
     {
-        auto s = sat / 100.0;
+        auto s = satur / 100.0;
 
         for (int i = 0; i < image.sx * image.sy * 3; i += 3)
         {
@@ -20,6 +20,23 @@ namespace tifo
                 sat = 100;
             image.pixels[i + 1] = sat;
         }
+    }*/
+
+    void saturation(hsv24_image& image, int s)
+    {
+        for (int i = 0; i < image.sx * image.sy * 3; i += 3)
+        {
+            int sat = static_cast<int>(image.pixels[i + 1]) + s;
+            sat = std::clamp(sat, 0, 100);
+            image.pixels[i + 1] = static_cast<uint8_t>(sat);
+        }
+    }
+
+    void rgb_saturation(rgb24_image& image, int s)
+    {
+        rgb_to_hsv(image);
+        saturation(image, s);
+        hsv_to_rgb(image);
     }
 
     void apply_argentique_grain(tifo::rgb24_image& image, float intensity)
@@ -126,7 +143,7 @@ namespace tifo
         rgb_to_hsv(image);
 
         // Désaturation
-        saturation(image, 70); // Diminuer la saturation à 70%
+        saturation(image, -10); // Diminuer la saturation à 70%
 
         // Égalisation et étirement d'histogramme
         // auto equalized = hsv_equalize(*hsvImage);
@@ -138,10 +155,10 @@ namespace tifo
         // Appliquer le filtre Laplacien pour augmenter la netteté
         increase_contrast(image, 80);
 
-        adjust_black_point(image, 20);
+        // adjust_black_point(image, 20);
 
         // Appliquer les autres effets dans l'espace RGB
-        add_vignette(image, 60);
+        add_vignette(image, 40);
         apply_argentique_grain(image, 20);
     }
 
@@ -153,7 +170,7 @@ namespace tifo
         increase_contrast(image, 130);
         // Desaturate blue
         rgb_to_hsv(image);
-        saturation(image, 70);
+        saturation(image, -20);
         // Back to rgb
         hsv_to_rgb(image);
         // Tint the image
@@ -180,6 +197,45 @@ namespace tifo
             image.pixels[i + RED] = gray;
             image.pixels[i + GREEN] = gray;
             image.pixels[i + BLUE] = gray;
+        }
+    }
+
+    void horizontal_flip(rgb24_image& image)
+    {
+        int half_width = image.sx / 2; // half of the width
+        for (int i = 0; i < image.sy; i++) // for each row
+        {
+            for (int j = 0; j < half_width;
+                 j++) // for each pixel up to half width
+            {
+                // Calculate the corresponding positions in the row
+                int left = (i * image.sx + j) * 3;
+                int right = (i * image.sx + image.sx - 1 - j) * 3;
+
+                // Swap the RGB values of the pixel
+                std::swap(image.pixels[left], image.pixels[right]); // R
+                std::swap(image.pixels[left + 1], image.pixels[right + 1]); // G
+                std::swap(image.pixels[left + 2], image.pixels[right + 2]); // B
+            }
+        }
+    }
+
+    void vertical_flip(rgb24_image& image)
+    {
+        int half_height = image.sy / 2; // half of the height
+        for (int i = 0; i < half_height; i++) // for each row up to half height
+        {
+            for (int j = 0; j < image.sx; j++) // for each pixel in the row
+            {
+                // Calculate the corresponding positions in the column
+                int top = (i * image.sx + j) * 3;
+                int bottom = ((image.sy - 1 - i) * image.sx + j) * 3;
+
+                // Swap the RGB values of the pixel
+                std::swap(image.pixels[top], image.pixels[bottom]); // R
+                std::swap(image.pixels[top + 1], image.pixels[bottom + 1]); // G
+                std::swap(image.pixels[top + 2], image.pixels[bottom + 2]); // B
+            }
         }
     }
 

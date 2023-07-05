@@ -109,6 +109,7 @@ class MainWindow : public QWidget
 public:
     MainWindow()
     {
+        index = 0;
         // Main layout
         QVBoxLayout* mainLayout = new QVBoxLayout(this);
 
@@ -183,7 +184,7 @@ public:
         optionsLayout->addWidget(toggleFiltersButton);
 
         QGroupBox* FiltersGroup = new QGroupBox();
-        FiltersGroup->setMaximumHeight(200);
+        FiltersGroup->setMaximumHeight(800);
         FiltersGroup->setCheckable(false); // Not checkable
         FiltersGroup->setVisible(false); // Initially not visible
         optionsLayout->addWidget(FiltersGroup);
@@ -214,6 +215,76 @@ public:
                 [this]() { applyFilter(tifo::grayscale, "Grayscale"); });
         filtersCheckBoxLayout->addWidget(grayscaleFilterButton);
 
+        // GLOW FILTER
+
+        QVBoxLayout* glowFilterLayout = new QVBoxLayout;
+        QVBoxLayout* glowRadiusLayout = new QVBoxLayout;
+        QVBoxLayout* glowThresholdLayout = new QVBoxLayout;
+
+        QHBoxLayout* glowRadiusSliderLayout = new QHBoxLayout;
+        QHBoxLayout* glowThresholdSliderLayout = new QHBoxLayout;
+
+        QLabel* minGlowRadius = new QLabel("0");
+        QLabel* maxGlowRadius = new QLabel("400");
+
+        QLabel* minGlowThreshold = new QLabel("0");
+        QLabel* maxGlowThreshold = new QLabel("255");
+
+        QLabel* valueGlowRadius = new QLabel("Glow Radius: 0");
+        QLabel* valueGlowThreshold = new QLabel("Glow Threshold: 0");
+
+        QSlider* glowRadiusSlider = new QSlider(Qt::Horizontal);
+        QSlider* glowThresholdSlider = new QSlider(Qt::Horizontal);
+
+        glowRadiusSlider->setRange(0, 400);
+        glowRadiusSlider->setValue(0);
+        glowRadiusSlider->setMaximumWidth(300);
+
+        glowThresholdSlider->setRange(0, 255);
+        glowThresholdSlider->setValue(0);
+        glowThresholdSlider->setMaximumWidth(300);
+
+        glowRadiusSliderLayout->addWidget(minGlowRadius);
+        glowRadiusSliderLayout->addWidget(glowRadiusSlider);
+        glowRadiusSliderLayout->addWidget(maxGlowRadius);
+
+        glowThresholdSliderLayout->addWidget(minGlowThreshold);
+        glowThresholdSliderLayout->addWidget(glowThresholdSlider);
+        glowThresholdSliderLayout->addWidget(maxGlowThreshold);
+
+        glowRadiusLayout->addLayout(glowRadiusSliderLayout);
+        glowRadiusLayout->addWidget(valueGlowRadius);
+
+        glowThresholdLayout->addLayout(glowThresholdSliderLayout);
+        glowThresholdLayout->addWidget(valueGlowThreshold);
+
+        glowFilterLayout->addLayout(glowRadiusLayout);
+        glowFilterLayout->addLayout(glowThresholdLayout);
+
+        QPushButton* glowFilterButton =
+            new QPushButton("Apply glow filter", this);
+        connect(glowFilterButton, &QPushButton::clicked, this,
+                [this]() { applyGlow(tifo::glow_filter, 200.0, 127, "Glow"); });
+        glowFilterLayout->addWidget(glowFilterButton);
+
+        filtersCheckBoxLayout->addLayout(glowFilterLayout);
+
+        //
+
+        QPushButton* horizontalFilterButton =
+            new QPushButton("Horizontal Flip", this);
+        connect(horizontalFilterButton, &QPushButton::clicked, this, [this]() {
+            applyFilter(tifo::horizontal_flip, "Horizontal Flip");
+        });
+        filtersCheckBoxLayout->addWidget(horizontalFilterButton);
+
+        QPushButton* verticalFilterButton =
+            new QPushButton("Vertical Flip", this);
+        connect(verticalFilterButton, &QPushButton::clicked, this, [this]() {
+            applyFilter(tifo::vertical_flip, "Vertical Flip");
+        });
+        filtersCheckBoxLayout->addWidget(verticalFilterButton);
+
         connect(toggleFiltersButton, &QPushButton::clicked, [=]() {
             bool isVisible = FiltersGroup->isVisible();
             FiltersGroup->setVisible(!isVisible);
@@ -236,7 +307,7 @@ public:
         optionsLayout->addWidget(toggleChangeChannelsButton);
 
         QGroupBox* SwapChannelsGroup = new QGroupBox();
-        SwapChannelsGroup->setMaximumHeight(200);
+        SwapChannelsGroup->setMaximumHeight(100);
         SwapChannelsGroup->setCheckable(false); // Not checkable
         SwapChannelsGroup->setVisible(false); // Initially not visible
         optionsLayout->addWidget(SwapChannelsGroup);
@@ -251,19 +322,16 @@ public:
 
         QCheckBox* redCheckBox = new QCheckBox("Red", this);
         SwapChannelsCheckBoxLayout->addWidget(redCheckBox);
-        red_swap = redCheckBox;
 
         SwapChannelsCheckBoxLayout->addStretch(1);
 
         QCheckBox* greenCheckBox = new QCheckBox("Green", this);
         SwapChannelsCheckBoxLayout->addWidget(greenCheckBox);
-        green_swap = greenCheckBox;
 
         SwapChannelsCheckBoxLayout->addStretch(1);
 
         QCheckBox* blueCheckBox = new QCheckBox("Blue", this);
         SwapChannelsCheckBoxLayout->addWidget(blueCheckBox);
-        blue_swap = blueCheckBox;
 
         SwapChannelsCheckBoxLayout->addStretch(1);
 
@@ -317,6 +385,183 @@ public:
         });
 
         /**
+         ** CHANNELS INCREASING
+         **/
+
+        QPushButton* toggleChannelsButton =
+            new QPushButton("> Channel increasing");
+        optionsLayout->addWidget(toggleChannelsButton);
+
+        QGroupBox* channelsGroup = new QGroupBox();
+        channelsGroup->setMaximumHeight(200);
+        channelsGroup->setCheckable(false); // Not checkable
+        channelsGroup->setVisible(false); // Initially not visible
+        optionsLayout->addWidget(channelsGroup);
+
+        QVBoxLayout* checkBoxChannelLayout = new QVBoxLayout;
+        channelsGroup->setLayout(checkBoxChannelLayout);
+
+        // SLIDER 1: SATURATION
+        QHBoxLayout* redLayout = new QHBoxLayout;
+        QSlider* redSlider = new QSlider(Qt::Horizontal);
+        redSlider->setRange(-255, 255);
+        redSlider->setValue(0);
+        redSlider->setMaximumWidth(300); // Set to appropriate value
+        QLabel* redMinLabel = new QLabel("-255");
+        QLabel* redMaxLabel = new QLabel("255");
+        QLabel* redValueLabel = new QLabel;
+        redValueLabel->setText(
+            QString("Red increase: %1").arg(redSlider->value()));
+        redLayout->addWidget(redMinLabel);
+
+        redLayout->addWidget(redSlider);
+        redLayout->addWidget(redMaxLabel);
+
+        QVBoxLayout* redVLayout = new QVBoxLayout;
+        redVLayout->addLayout(redLayout);
+
+        QHBoxLayout* red_Layout = new QHBoxLayout;
+        red_Layout->addStretch(1); // add a stretchable empty space at left
+        red_Layout->addWidget(redValueLabel); // add your label
+        red_Layout->addStretch(1); // add a stretchable empty space at right
+
+        redVLayout->addLayout(red_Layout);
+
+        checkBoxChannelLayout->addLayout(redVLayout);
+
+        red_slider_value = 0;
+
+        connect(redSlider, &QSlider::sliderPressed, [=, this]() {
+            qDebug() << "Initial value: " << redSlider->value();
+            red_slider_value = redSlider->value();
+        });
+
+        connect(redSlider, &QSlider::sliderReleased, [=, this]() {
+            qDebug() << "Final value: " << redSlider->value();
+            auto old_value = red_slider_value;
+            auto new_value = redSlider->value();
+            applySwap(tifo::increase_channel, new_value - old_value, RED,
+                      "Red increase");
+            red_slider_value = new_value;
+        });
+
+        connect(redSlider, &QSlider::valueChanged, [=, this](int value) {
+            redValueLabel->setText(
+                QString("Red increase: %1").arg(redSlider->value()));
+        });
+
+        // SLIDER 2: GREEN
+        QHBoxLayout* greenLayout = new QHBoxLayout;
+        QSlider* greenSlider = new QSlider(Qt::Horizontal);
+        greenSlider->setRange(-255, 255);
+        greenSlider->setValue(0);
+        greenSlider->setMaximumWidth(300); // Set to appropriate value
+        QLabel* greenMinLabel = new QLabel("-255");
+        QLabel* greenMaxLabel = new QLabel("255");
+        QLabel* greenValueLabel = new QLabel;
+        greenValueLabel->setText(
+            QString("Green increase: %1").arg(greenSlider->value()));
+        greenLayout->addWidget(greenMinLabel);
+
+        greenLayout->addWidget(greenSlider);
+        greenLayout->addWidget(greenMaxLabel);
+
+        QVBoxLayout* greenVLayout = new QVBoxLayout;
+        greenVLayout->addLayout(greenLayout);
+
+        QHBoxLayout* green_Layout = new QHBoxLayout;
+        green_Layout->addStretch(1); // add a stretchable empty space at left
+        green_Layout->addWidget(greenValueLabel); // add your label
+        green_Layout->addStretch(1); // add a stretchable empty space at right
+
+        greenVLayout->addLayout(green_Layout);
+
+        checkBoxChannelLayout->addLayout(greenVLayout);
+
+        green_slider_value = 0;
+
+        connect(greenSlider, &QSlider::sliderPressed, [=, this]() {
+            qDebug() << "Initial value: " << greenSlider->value();
+            green_slider_value = greenSlider->value();
+        });
+
+        connect(greenSlider, &QSlider::sliderReleased, [=, this]() {
+            qDebug() << "Final value: " << greenSlider->value();
+            auto old_value = green_slider_value;
+            auto new_value = greenSlider->value();
+            applySwap(tifo::increase_channel, new_value - old_value, GREEN,
+                      "Green increase");
+            green_slider_value = new_value;
+        });
+
+        connect(greenSlider, &QSlider::valueChanged, [=, this](int value) {
+            greenValueLabel->setText(
+                QString("Green increase: %1").arg(greenSlider->value()));
+        });
+
+        // SLIDER 3: BLUE
+        QHBoxLayout* blueLayout = new QHBoxLayout;
+        QSlider* blueSlider = new QSlider(Qt::Horizontal);
+        blueSlider->setRange(-255, 255);
+        blueSlider->setValue(0);
+        blueSlider->setMaximumWidth(300); // Set to appropriate value
+        QLabel* blueMinLabel = new QLabel("-255");
+        QLabel* blueMaxLabel = new QLabel("255");
+        QLabel* blueValueLabel = new QLabel;
+        blueValueLabel->setText(
+            QString("Blue increase: %1").arg(blueSlider->value()));
+        blueLayout->addWidget(blueMinLabel);
+
+        blueLayout->addWidget(blueSlider);
+        blueLayout->addWidget(blueMaxLabel);
+
+        QVBoxLayout* blueVLayout = new QVBoxLayout;
+        blueVLayout->addLayout(blueLayout);
+
+        QHBoxLayout* blue_Layout = new QHBoxLayout;
+        blue_Layout->addStretch(1); // add a stretchable empty space at left
+        blue_Layout->addWidget(blueValueLabel); // add your label
+        blue_Layout->addStretch(1); // add a stretchable empty space at right
+
+        blueVLayout->addLayout(blue_Layout);
+
+        checkBoxChannelLayout->addLayout(blueVLayout);
+
+        blue_slider_value = 0;
+
+        connect(blueSlider, &QSlider::sliderPressed, [=, this]() {
+            qDebug() << "Initial value: " << blueSlider->value();
+            blue_slider_value = blueSlider->value();
+        });
+
+        connect(blueSlider, &QSlider::sliderReleased, [=, this]() {
+            qDebug() << "Final value: " << blueSlider->value();
+            auto old_value = blue_slider_value;
+            auto new_value = blueSlider->value();
+            applySwap(tifo::increase_channel, new_value - old_value, BLUE,
+                      "Blue increase");
+            blue_slider_value = new_value;
+        });
+
+        connect(blueSlider, &QSlider::valueChanged, [=, this](int value) {
+            blueValueLabel->setText(
+                QString("Blue increase: %1").arg(blueSlider->value()));
+        });
+
+        connect(toggleChannelsButton, &QPushButton::clicked, [=]() {
+            bool isVisible = channelsGroup->isVisible();
+            channelsGroup->setVisible(!isVisible);
+            if (isVisible)
+            {
+                toggleChannelsButton->setText("> Channels increasing");
+            }
+            else
+            {
+                toggleChannelsButton->setText("V Channels increasing");
+            }
+        });
+
+        /**
          ** PROCESSING OPTIONS PART
          **/
 
@@ -335,14 +580,14 @@ public:
         // SLIDER 1: SATURATION
         QHBoxLayout* slider1Layout = new QHBoxLayout;
         QSlider* slider1 = new QSlider(Qt::Horizontal);
-        slider1->setRange(0, 200);
-        slider1->setValue(100);
+        slider1->setRange(-100, 100);
+        slider1->setValue(0);
         slider1->setMaximumWidth(300); // Set to appropriate value
-        QLabel* slider1MinLabel = new QLabel("0%");
-        QLabel* slider1MaxLabel = new QLabel("200%");
+        QLabel* slider1MinLabel = new QLabel("-100");
+        QLabel* slider1MaxLabel = new QLabel("100");
         QLabel* slider1ValueLabel = new QLabel;
         slider1ValueLabel->setText(
-            QString("Saturation: %1%").arg(slider1->value()));
+            QString("Saturation: %1").arg(slider1->value()));
         slider1Layout->addWidget(slider1MinLabel);
 
         slider1Layout->addWidget(slider1);
@@ -360,18 +605,18 @@ public:
 
         checkBoxLayout->addLayout(slider1VLayout);
 
-        slider1_value = 100;
+        slider1_value = 0;
 
         connect(slider1, &QSlider::sliderPressed, [=, this]() {
             qDebug() << "Initial value: " << slider1->value();
-            slider1_value = slider1->value();
+            // slider1_value = slider1->value();
         });
 
         connect(slider1, &QSlider::sliderReleased, [=, this]() {
             qDebug() << "Final value: " << slider1->value();
-            auto old_value = std::max(slider1_value, 1);
-            auto new_value = slider1->value() * 100;
-            applySlider(tifo::saturation, (int)(new_value / old_value),
+            auto old_value = slider1_value;
+            auto new_value = slider1->value();
+            applySlider(tifo::rgb_saturation, new_value - old_value,
                         "Saturation");
             slider1_value = new_value;
         });
@@ -462,13 +707,6 @@ public:
         checkBoxLayout->addLayout(slider3VLayout);
 
         slider3_value = 0;
-
-        /*
-        connect(slider3, &QSlider::sliderPressed, [=, this]() {
-            qDebug() << "Initial value: " << slider3->value();
-            slider3_value = slider3->value();
-        });
-        */
 
         connect(slider3, &QSlider::sliderReleased, [=, this]() {
             qDebug() << "Final value: " << slider3->value();
@@ -656,6 +894,40 @@ public slots:
     }
 
     void
+    applyGlow(const std::function<void(tifo::rgb24_image&, float, int)>& filter,
+              float radius, int threshold, const char* str)
+    {
+        QElapsedTimer timer1;
+        timer1.start();
+        auto tmp = qimage_to_rgb(images[index]);
+        QElapsedTimer timer2;
+        timer2.start();
+
+        filter(*tmp, radius, threshold);
+
+        m_image = rgb_to_qimage(*tmp);
+
+        m_imageLabel->setPixmap(QPixmap::fromImage(m_image));
+
+        qDebug() << str << " filter execution time: " << timer2.elapsed()
+                 << "ms";
+
+        index++;
+
+        if (images.size() == index)
+        {
+            images.push_back(m_image);
+        }
+        else
+        {
+            images[index] = m_image;
+        }
+
+        qDebug() << "Whole " << str
+                 << " process execution time: " << timer1.elapsed() << "ms";
+    }
+
+    void
     applySwap(const std::function<void(tifo::rgb24_image&, int, int)>& filter,
               int channel1, int channel2, const char* str)
     {
@@ -700,15 +972,14 @@ private:
     SquareButton* originalButton;
     QWidget* optionsWidget;
 
-    QCheckBox* red_swap;
-    QCheckBox* green_swap;
-    QCheckBox* blue_swap;
-
     int index;
 
     int slider1_value;
     int slider2_value;
     int slider3_value;
+    int red_slider_value;
+    int green_slider_value;
+    int blue_slider_value;
 
     std::vector<std::vector<int>> sliders_values;
 };

@@ -3,6 +3,7 @@
 //
 #include "filters.hh"
 
+#include <QDebug>
 #include <algorithm>
 #include <vector>
 
@@ -44,7 +45,7 @@ namespace tifo
         return new_image;
     }
 
-    void sobel_filter(tifo::gray8_image& image)
+    void sobel_filter(gray8_image& image)
     {
         std::vector<std::vector<float>> sobelHorizontal = { { -1, 0, 1 },
                                                             { -2, 0, 2 },
@@ -69,6 +70,54 @@ namespace tifo
         delete imageVertical;
     }
 
+    void sobel_gray(rgb24_image& image)
+    {
+        auto gray = gaussian_blur(*rgb_to_gray_no_color(image), 5, 2.0);
+
+        sobel_filter(*gray);
+
+        for (int i = 0; i < image.sx * image.sy; i++)
+        {
+            image.pixels[i * 3] = gray->pixels[i];
+            image.pixels[i * 3 + 1] = gray->pixels[i];
+            image.pixels[i * 3 + 2] = gray->pixels[i];
+        }
+
+        delete gray;
+    }
+
+    void sobel_rgb(rgb24_image& image)
+    {
+        // Split the RGB image into three separate grayscale images
+        rgb_gaussian(image, 5, 2.0);
+
+        auto colors = rgb_to_gray_color(image);
+
+        // Apply Laplacian filter to each channel
+        sobel_filter(*colors[0]);
+        sobel_filter(*colors[1]);
+        sobel_filter(*colors[2]);
+
+        // Combine the blurred channels back into a single RGB image
+        for (int y = 0; y < image.sy; ++y)
+        {
+            for (int x = 0; x < image.sx; ++x)
+            {
+                image.pixels[(y * image.sx + x) * 3] =
+                    colors[0]->pixels[y * image.sx + x];
+                image.pixels[(y * image.sx + x) * 3 + 1] =
+                    colors[1]->pixels[y * image.sx + x];
+                image.pixels[(y * image.sx + x) * 3 + 2] =
+                    colors[2]->pixels[y * image.sx + x];
+            }
+        }
+
+        for (auto obj : colors)
+        {
+            delete obj;
+        }
+    }
+
     void laplacien_filter(gray8_image& image, float k)
     {
         std::vector<std::vector<float>> laplacian = { { 0, -1, 0 },
@@ -77,9 +126,10 @@ namespace tifo
 
         auto imageLaplacian = applyMask(image, laplacian);
 
-        for (int i = 0; i < image.length; i++)
+        for (int i = 0; i < image.sx * image.sy; i++)
         {
-            float newValue = image.pixels[i] + k * imageLaplacian->pixels[i];
+            float newValue =
+                (float)image.pixels[i] + k * (float)imageLaplacian->pixels[i];
 
             newValue = std::max(0.0f, std::min(255.0f, newValue));
 
@@ -89,64 +139,52 @@ namespace tifo
         delete imageLaplacian;
     }
 
-    void rgb_laplacian(rgb24_image& image, float k)
+    void laplacien_filter_rgb(rgb24_image& image, float k)
     {
-        // Convert RGB image to grayscale
-        gray8_image* gray_image = rgb_to_gray_no_color(image);
+        // Split the RGB image into three separate grayscale images
+        rgb_gaussian(image, 5, 2.0);
 
-        // Apply Laplacian filter to grayscale image
-        laplacien_filter(*gray_image, 1.0);
+        auto colors = rgb_to_gray_color(image);
 
-        // Apply "contrast mask" to each channel of the original RGB image
+        // Apply Laplacian filter to each channel
+        laplacien_filter(*colors[0], k);
+        laplacien_filter(*colors[1], k);
+        laplacien_filter(*colors[2], k);
+
+        // Combine the blurred channels back into a single RGB image
         for (int y = 0; y < image.sy; ++y)
         {
             for (int x = 0; x < image.sx; ++x)
             {
-                for (int c = 0; c < 3; ++c)
-                {
-                    int idx = (y * image.sx + x) * 3 + c;
-                    float newValue =
-                        image.pixels[idx] + k * image.pixels[y * image.sx + x];
-
-                    // Clamping
-                    newValue = std::max(0.0f, std::min(255.0f, newValue));
-
-                    image.pixels[idx] = static_cast<uint8_t>(newValue);
-                }
+                image.pixels[(y * image.sx + x) * 3] =
+                    colors[0]->pixels[y * image.sx + x];
+                image.pixels[(y * image.sx + x) * 3 + 1] =
+                    colors[1]->pixels[y * image.sx + x];
+                image.pixels[(y * image.sx + x) * 3 + 2] =
+                    colors[2]->pixels[y * image.sx + x];
             }
         }
 
-        // Clean up
-        delete gray_image;
+        for (auto obj : colors)
+        {
+            delete obj;
+        }
     }
 
-    void rgb_apply_filter(rgb24_image& image,
-                          std::function<gray8_image*(gray8_image&)> filter)
+    void laplacian_gray(rgb24_image& image, float k)
     {
-        std::vector<gray8_image*> colors = rgb_to_gray_color(image);
+        auto gray = gaussian_blur(*rgb_to_gray_no_color(image), 5, 2.0);
 
-        std::vector<gray8_image*> new_colors;
-        new_colors.push_back(filter(*colors.at(0)));
-        new_colors.push_back(filter(*colors.at(1)));
-        new_colors.push_back(filter(*colors.at(2)));
+        laplacien_filter(*gray, 2.0);
 
-        rgb24_image* new_image = gray_to_rgb_color(new_colors);
-    }
+        for (int i = 0; i < image.sx * image.sy; i++)
+        {
+            image.pixels[i * 3] = gray->pixels[i];
+            image.pixels[i * 3 + 1] = gray->pixels[i];
+            image.pixels[i * 3 + 2] = gray->pixels[i];
+        }
 
-    void
-    rgb_apply_filter_to_gray(rgb24_image& image,
-                             std::function<gray8_image*(gray8_image&)> filter)
-    {
-        auto gray = rgb_to_gray_no_color(image); // Convert to grayscale
-
-        auto filtered_gray = filter(*gray); // Apply the filter
-
-        auto new_image =
-            gray_to_rgb_no_color(*filtered_gray); // Convert back to RGB
-
-        // Don't forget to deallocate memory!
         delete gray;
-        delete filtered_gray;
     }
 
     std::vector<std::vector<float>> gaussian_filter(int size, float sigma)
@@ -184,38 +222,61 @@ namespace tifo
         return applyMask(image, filter);
     }
 
-    void glow_filter(tifo::gray8_image& image, int blur_radius, int threshold)
+    void rgb_gaussian(rgb24_image& image, int size, float sigma)
     {
-        // Apply a Gaussian blur to the image.
-        auto blurred = gaussian_blur(image, 3, blur_radius);
+        // Split the RGB image into three separate grayscale images
+        auto colors = rgb_to_gray_color(image);
 
-        // Threshold the blurred image.
-        for (int y = 0; y < blurred->sy; ++y)
-        {
-            for (int x = 0; x < blurred->sx; ++x)
-            {
-                int pixel_index = y * blurred->sx + x;
-                if (blurred->pixels[pixel_index] < threshold)
-                {
-                    blurred->pixels[pixel_index] = 0;
-                }
-            }
-        }
+        auto filter = gaussian_filter(size, sigma);
 
-        // Add the glow to the original image.
-        auto new_image = new gray8_image(image.sx, image.sy);
+        // Apply Gaussian blur to each channel
+        auto blurredRed = applyMask(*colors[0], filter);
+        auto blurredGreen = applyMask(*colors[1], filter);
+        auto blurredBlue = applyMask(*colors[2], filter);
+
+        // Combine the blurred channels back into a single RGB image
         for (int y = 0; y < image.sy; ++y)
         {
             for (int x = 0; x < image.sx; ++x)
             {
-                int pixel_index = y * image.sx + x;
-                int new_value =
-                    image.pixels[pixel_index] + blurred->pixels[pixel_index];
-                new_image->pixels[pixel_index] = std::min(new_value, 255);
+                image.pixels[(y * image.sx + x) * 3] =
+                    blurredRed->pixels[y * image.sx + x];
+                image.pixels[(y * image.sx + x) * 3 + 1] =
+                    blurredGreen->pixels[y * image.sx + x];
+                image.pixels[(y * image.sx + x) * 3 + 2] =
+                    blurredBlue->pixels[y * image.sx + x];
             }
         }
 
-        delete blurred;
+        delete blurredRed;
+        delete blurredGreen;
+        delete blurredBlue;
+
+        for (auto obj : colors)
+        {
+            delete obj;
+        }
+    }
+
+    void glow_filter(rgb24_image& image, float blur_radius, int threshold)
+    {
+        auto tmp = new rgb24_image(image);
+        // Apply a Gaussian blur to the image.
+        rgb_gaussian(*tmp, 5, blur_radius);
+
+        int px;
+        // Threshold the blurred image.
+        for (int i = 0; i < image.sx * image.sy * 3; i++)
+        {
+            if (tmp->pixels[i] < threshold)
+                px = 0;
+            else
+                px = tmp->pixels[i] - threshold;
+
+            image.pixels[i] = std::min(image.pixels[i] + px, 255);
+        }
+
+        delete tmp;
     }
 
 } // namespace tifo
