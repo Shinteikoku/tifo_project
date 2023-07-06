@@ -1,6 +1,3 @@
-//
-// Created by Conan Maël on 03/07/2023.
-//
 #pragma once
 
 #include <QApplication>
@@ -18,7 +15,7 @@
 #include <QScrollArea>
 #include <QSlider>
 #include <QVBoxLayout>
-//... Include your image processing functions here
+
 #include "image.hh"
 #include "image_convert.hh"
 #include "image_operations.hh"
@@ -165,8 +162,6 @@ public:
         // Options area
         QVBoxLayout* optionsLayout = new QVBoxLayout;
 
-        // Create the scroll area and set its widget to a new QWidget that
-        // contains the options layout
         QScrollArea* optionsScrollArea = new QScrollArea;
         optionsScrollArea->setMaximumWidth(400);
         QWidget* optionsWidget = new QWidget;
@@ -1426,7 +1421,6 @@ public:
             qDebug() << "Mouse clicked at position" << pos;
         }
 
-        // Pass event to base class to ensure it gets handled properly
         QWidget::mousePressEvent(event);
     }
 

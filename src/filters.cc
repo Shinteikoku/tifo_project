@@ -61,8 +61,8 @@ namespace tifo
         for (int i = 0; i < image.length; i++)
         {
             float magnitude =
-                sqrt(imageHorizontal->pixels[i] * imageHorizontal->pixels[i]
-                     + imageVertical->pixels[i] * imageVertical->pixels[i]);
+                sqrt((imageHorizontal->pixels[i] * imageHorizontal->pixels[i])
+                     + (imageVertical->pixels[i] * imageVertical->pixels[i]));
             image.pixels[i] = static_cast<uint8_t>(magnitude);
         }
 
@@ -88,17 +88,14 @@ namespace tifo
 
     void sobel_rgb(rgb24_image& image)
     {
-        // Split the RGB image into three separate grayscale images
         rgb_gaussian(image, 5, 2.0);
 
         auto colors = rgb_to_gray_color(image);
 
-        // Apply Laplacian filter to each channel
         sobel_filter(*colors[0]);
         sobel_filter(*colors[1]);
         sobel_filter(*colors[2]);
 
-        // Combine the blurred channels back into a single RGB image
         for (int y = 0; y < image.sy; ++y)
         {
             for (int x = 0; x < image.sx; ++x)
@@ -129,7 +126,7 @@ namespace tifo
         for (int i = 0; i < image.sx * image.sy; i++)
         {
             float newValue =
-                (float)image.pixels[i] + k * (float)imageLaplacian->pixels[i];
+                (float)image.pixels[i] + (k * (float)imageLaplacian->pixels[i]);
 
             newValue = std::max(0.0f, std::min(255.0f, newValue));
 
@@ -141,19 +138,14 @@ namespace tifo
 
     void laplacien_filter_rgb(rgb24_image& image, float k)
     {
-        // Split the RGB image into three separate grayscale images
         rgb_gaussian(image, 5, 2.0);
-
-        rgb_to_YCrCb(image);
 
         auto colors = rgb_to_gray_color(image);
 
-        // Apply Laplacian filter to each channel
         laplacien_filter(*colors[0], k);
         laplacien_filter(*colors[1], k);
         laplacien_filter(*colors[2], k);
 
-        // Combine the blurred channels back into a single RGB image
         for (int y = 0; y < image.sy; ++y)
         {
             for (int x = 0; x < image.sx; ++x)
@@ -175,17 +167,14 @@ namespace tifo
 
     void laplacien_filter_yCrCb(yCrCb24_image& image, float k)
     {
-        // Split the RGB image into three separate grayscale images
         rgb_gaussian(image, 5, 2.0);
 
         rgb_to_YCrCb(image);
 
         auto colors = rgb_to_gray_color(image);
 
-        // Apply Laplacian filter to each channel
         laplacien_filter(*colors[0], k);
 
-        // Combine the blurred channels back into a single RGB image
         for (int y = 0; y < image.sy; ++y)
         {
             for (int x = 0; x < image.sx; ++x)
@@ -205,17 +194,14 @@ namespace tifo
 
     void sobel_yCrCb(rgb24_image& image)
     {
-        // Split the RGB image into three separate grayscale images
         rgb_gaussian(image, 5, 2.0);
 
         rgb_to_YCrCb(image);
 
         auto colors = rgb_to_gray_color(image);
 
-        // Apply Laplacian filter to each channel
         sobel_filter(*colors[0]);
 
-        // Combine the blurred channels back into a single RGB image
         for (int y = 0; y < image.sy; ++y)
         {
             for (int x = 0; x < image.sx; ++x)
@@ -235,17 +221,14 @@ namespace tifo
 
     void laplacien_filter_hsv(hsv24_image& image, float k)
     {
-        // Split the RGB image into three separate grayscale images
         rgb_gaussian(image, 5, 2.0);
 
         rgb_to_hsv(image);
 
         auto colors = hsv_to_gray_color(image);
 
-        // Apply Laplacian filter to each channel
         laplacien_filter(*colors[2], k);
 
-        // Combine the blurred channels back into a single RGB image
         for (int y = 0; y < image.sy; ++y)
         {
             for (int x = 0; x < image.sx; ++x)
@@ -266,17 +249,14 @@ namespace tifo
 
     void sobel_hsv(hsv24_image& image)
     {
-        // Split the RGB image into three separate grayscale images
         rgb_gaussian(image, 5, 2.0);
 
         rgb_to_hsv(image);
 
         auto colors = hsv_to_gray_color(image);
 
-        // Apply Laplacian filter to each channel
         sobel_filter(*colors[2]);
 
-        // Combine the blurred channels back into a single RGB image
         for (int y = 0; y < image.sy; ++y)
         {
             for (int x = 0; x < image.sx; ++x)
@@ -316,7 +296,6 @@ namespace tifo
         std::vector<std::vector<float>> filter(size, std::vector<float>(size));
         float sum = 0;
 
-        // Generate Gaussian filter.
         int radius = size / 2;
         for (int y = -radius; y <= radius; ++y)
         {
@@ -328,7 +307,6 @@ namespace tifo
             }
         }
 
-        // Normalize filter.
         for (int y = 0; y < size; ++y)
         {
             for (int x = 0; x < size; ++x)
@@ -348,17 +326,14 @@ namespace tifo
 
     void rgb_gaussian(rgb24_image& image, int size, float sigma)
     {
-        // Split the RGB image into three separate grayscale images
         auto colors = rgb_to_gray_color(image);
 
         auto filter = gaussian_filter(size, sigma);
 
-        // Apply Gaussian blur to each channel
         auto blurredRed = applyMask(*colors[0], filter);
         auto blurredGreen = applyMask(*colors[1], filter);
         auto blurredBlue = applyMask(*colors[2], filter);
 
-        // Combine the blurred channels back into a single RGB image
         for (int y = 0; y < image.sy; ++y)
         {
             for (int x = 0; x < image.sx; ++x)
@@ -385,11 +360,10 @@ namespace tifo
     void glow_filter(rgb24_image& image, float blur_radius, int threshold)
     {
         auto tmp = new rgb24_image(image);
-        // Apply a Gaussian blur to the image.
+
         rgb_gaussian(*tmp, 5, blur_radius);
 
         int px;
-        // Threshold the blurred image.
         for (int i = 0; i < image.sx * image.sy * 3; i++)
         {
             if (tmp->pixels[i] < threshold)

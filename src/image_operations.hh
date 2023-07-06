@@ -1,7 +1,3 @@
-//
-// Created by Conan Maël on 17/06/2023.
-//
-
 #include "image.hh"
 #include "image_convert.hh"
 #include "histogram_operations.hh"

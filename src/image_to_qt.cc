@@ -1,6 +1,3 @@
-//
-// Created by Conan Maël on 03/07/2023.
-//
 #include "image_to_qt.hh"
 
 #include <QDebug>

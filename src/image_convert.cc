@@ -1,7 +1,3 @@
-//
-// Created by Conan Maël on 17/06/2023.
-//
-
 #include "image_convert.hh"
 
 #include <iostream>
@@ -261,7 +257,6 @@ namespace tifo
             Cr = std::max(0.0f, std::min(1.0f, G));
             Cb = std::max(0.0f, std::min(1.0f, B));
 
-            // Scale back to 0-255, round, and assign back to the pixels
             image.pixels[i] = (uint8_t)std::round(Y * 255.0f);
             image.pixels[i + 1] = (uint8_t)std::round(Cr * 255.0f);
             image.pixels[i + 2] = (uint8_t)std::round(Cb * 255.0f);
@@ -284,7 +279,6 @@ namespace tifo
             G = std::max(0.0f, std::min(1.0f, G));
             B = std::max(0.0f, std::min(1.0f, B));
 
-            // Scale back to 0-255, round, and assign back to the pixels
             image.pixels[i] = (uint8_t)std::round(R * 255.0f);
             image.pixels[i + 1] = (uint8_t)std::round(G * 255.0f);
             image.pixels[i + 2] = (uint8_t)std::round(B * 255.0f);

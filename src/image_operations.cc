@@ -1,7 +1,3 @@
-//
-// Created by Conan Maël on 17/06/2023.
-//
-
 #include "image_operations.hh"
 
 #include <algorithm>
@@ -167,17 +163,11 @@ namespace tifo
         // Désaturation
         saturation(image, -10); // Diminuer la saturation à 70%
 
-        // Égalisation et étirement d'histogramme
-        // auto equalized = hsv_equalize(*hsvImage);
-        // stretchHistogram(hsvImage);
-
         // Convertir en RGB
         hsv_to_rgb(image);
 
         // Appliquer le filtre Laplacien pour augmenter la netteté
         increase_contrast(image, 80);
-
-        // adjust_black_point(image, 20);
 
         // Appliquer les autres effets dans l'espace RGB
         add_vignette(image, 40);
@@ -229,39 +219,34 @@ namespace tifo
 
     void horizontal_flip(rgb24_image& image)
     {
-        int half_width = image.sx / 2; // half of the width
-        for (int i = 0; i < image.sy; i++) // for each row
+        int half_width = image.sx / 2;
+        for (int i = 0; i < image.sy; i++)
         {
-            for (int j = 0; j < half_width;
-                 j++) // for each pixel up to half width
+            for (int j = 0; j < half_width; j++)
             {
-                // Calculate the corresponding positions in the row
                 int left = (i * image.sx + j) * 3;
                 int right = (i * image.sx + image.sx - 1 - j) * 3;
 
-                // Swap the RGB values of the pixel
-                std::swap(image.pixels[left], image.pixels[right]); // R
-                std::swap(image.pixels[left + 1], image.pixels[right + 1]); // G
-                std::swap(image.pixels[left + 2], image.pixels[right + 2]); // B
+                std::swap(image.pixels[left], image.pixels[right]);
+                std::swap(image.pixels[left + 1], image.pixels[right + 1]);
+                std::swap(image.pixels[left + 2], image.pixels[right + 2]);
             }
         }
     }
 
     void vertical_flip(rgb24_image& image)
     {
-        int half_height = image.sy / 2; // half of the height
-        for (int i = 0; i < half_height; i++) // for each row up to half height
+        int half_height = image.sy / 2;
+        for (int i = 0; i < half_height; i++)
         {
-            for (int j = 0; j < image.sx; j++) // for each pixel in the row
+            for (int j = 0; j < image.sx; j++)
             {
-                // Calculate the corresponding positions in the column
                 int top = (i * image.sx + j) * 3;
                 int bottom = ((image.sy - 1 - i) * image.sx + j) * 3;
 
-                // Swap the RGB values of the pixel
-                std::swap(image.pixels[top], image.pixels[bottom]); // R
-                std::swap(image.pixels[top + 1], image.pixels[bottom + 1]); // G
-                std::swap(image.pixels[top + 2], image.pixels[bottom + 2]); // B
+                std::swap(image.pixels[top], image.pixels[bottom]);
+                std::swap(image.pixels[top + 1], image.pixels[bottom + 1]);
+                std::swap(image.pixels[top + 2], image.pixels[bottom + 2]);
             }
         }
     }
@@ -269,19 +254,16 @@ namespace tifo
     std::array<uint8_t, 3> interpolate_pixel(const rgb24_image& image, float x,
                                              float y)
     {
-        // Get the four pixels enclosing (x, y)
         int x1 = floor(x);
         int y1 = floor(y);
         int x2 = x1 + 1;
         int y2 = y1 + 1;
 
-        // Calculate the weights for each pixel
         float w1 = (x2 - x) * (y2 - y);
         float w2 = (x - x1) * (y2 - y);
         float w3 = (x2 - x) * (y - y1);
         float w4 = (x - x1) * (y - y1);
 
-        // Get the color of each pixel
         std::array<uint8_t, 3> c1 = {
             image.pixels[(y1 * image.sx + x1) * 3],
             image.pixels[(y1 * image.sx + x1) * 3 + 1],
@@ -303,7 +285,6 @@ namespace tifo
             image.pixels[(y2 * image.sx + x2) * 3 + 2]
         };
 
-        // Interpolate the color at (x, y)
         std::array<uint8_t, 3> c;
         for (int i = 0; i < 3; ++i)
             c[i] = std::clamp(
@@ -321,7 +302,6 @@ namespace tifo
         {
             return new rgb24_image(original);
         }
-        // Calculate dimensions of the new image
         double sin_angle = std::abs(sin(rad));
         double cos_angle = std::abs(cos(rad));
         int new_width = original.sx * cos_angle + original.sy * sin_angle;
@@ -343,15 +323,12 @@ namespace tifo
         {
             for (int x = 0; x < new_width; ++x)
             {
-                // Translate point to origin for the new image
                 int dx = x - rotated_mid_x;
                 int dy = y - rotated_mid_y;
 
-                // Apply rotation
                 float old_x = original_mid_x + (dx * cos(rad) - dy * sin(rad));
                 float old_y = original_mid_y + (dx * sin(rad) + dy * cos(rad));
 
-                // Bilinear interpolation
                 if (old_x >= 0 && old_x < original.sx - 1 && old_y >= 0
                     && old_y < original.sy - 1)
                 {
@@ -361,7 +338,6 @@ namespace tifo
                     rotated->pixels[(y * new_width + x) * 3 + 1] = color[1];
                     rotated->pixels[(y * new_width + x) * 3 + 2] = color[2];
                 }
-                // Fill the remaining area with a specific color (e.g., black)
                 else
                 {
                     rotated->pixels[(y * new_width + x) * 3] = 0;
