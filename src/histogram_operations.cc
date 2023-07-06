@@ -6,19 +6,18 @@
 
 namespace tifo
 {
-    gray8_image* equalize(gray8_image& image, histogram_1d& hist, int b_sup)
+    void equalize(gray8_image& image, histogram_1d& hist, int b_sup)
     {
-        auto new_image = new gray8_image(image.sx, image.sy);
         histogram_1d* cumul = cumulative_hist(hist, b_sup);
 
         int nb_pix = image.length;
 
         for (int i = 0; i < image.length; i++)
         {
-            new_image->pixels[i] = (b_sup * cumul->histogram[image.pixels[i]]) / nb_pix;
+            image.pixels[i] = (uint8_t)round(
+                static_cast<float>(b_sup * cumul->histogram[image.pixels[i]])
+                / static_cast<float>(nb_pix));
         }
-
-        return new_image;
     }
 
     rgb24_image* rgb_equalize(rgb24_image& image)
@@ -29,9 +28,14 @@ namespace tifo
         histogram_1d* blue_hist = make_histogram(*colors.at(2), 255);
 
         std::vector<gray8_image*> new_colors;
-        new_colors.push_back(equalize(*colors.at(0), *red_hist, 255));
-        new_colors.push_back(equalize(*colors.at(1), *green_hist, 255));
-        new_colors.push_back(equalize(*colors.at(2), *blue_hist, 255));
+
+        equalize(*colors.at(0), *red_hist, 255);
+        equalize(*colors.at(1), *green_hist, 255);
+        equalize(*colors.at(2), *blue_hist, 255);
+
+        new_colors.push_back(colors.at(0));
+        new_colors.push_back(colors.at(1));
+        new_colors.push_back(colors.at(2));
 
         rgb24_image* new_image = gray_to_rgb_color(new_colors);
 
@@ -47,11 +51,24 @@ namespace tifo
 
         new_colors.push_back(colors.at(0));
         new_colors.push_back(colors.at(1));
-        new_colors.push_back(equalize(*colors.at(2), *h_hist, 100));
+        equalize(*colors.at(2), *h_hist, 100);
+        new_colors.push_back(colors.at(2));
 
         hsv24_image* new_image = gray_to_hsv_color(new_colors);
 
         return new_image;
+    }
+
+    void yCrCb_equalize(yCrCb24_image& image)
+    {
+        auto colors = rgb_to_gray_color(image);
+        auto hist = make_histogram(*colors[0], 255);
+        equalize(*colors[0], *hist, 255);
+
+        for (int i = 0; i < image.sx * image.sy; i++)
+        {
+            image.pixels[i * 3] = colors[0]->pixels[i];
+        }
     }
 
     int find_min(histogram_1d& hist, int limit)
@@ -60,7 +77,8 @@ namespace tifo
         int i_min = 0;
         for (int i = 1; i <= limit; i++)
         {
-            if (hist.histogram[i] < min) {
+            if (hist.histogram[i] < min)
+            {
                 min = hist.histogram[i];
                 i_min = i;
             }

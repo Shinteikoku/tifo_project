@@ -244,4 +244,50 @@ namespace tifo
             image.pixels[i + 2] = colors[2];
         }
     }
+
+    void rgb_to_YCrCb(rgb24_image& image)
+    {
+        for (int i = 0; i < image.sx * image.sy * 3; i += 3)
+        {
+            float R = (float)image.pixels[i] / 255.0f; // Normalize to 0-1
+            float G = (float)image.pixels[i + 1] / 255.0f; // Normalize to 0-1
+            float B = (float)image.pixels[i + 2] / 255.0f; // Normalize to 0-1
+
+            float Y = 0.299f * R + 0.587f * G + 0.114f * B;
+            float Cr = 0.5f * R - 0.4187f * G + 0.0813f * B + 0.5f;
+            float Cb = -0.1687f * R - 0.3313f * G + 0.5f * B + 0.5f;
+
+            Y = std::max(0.0f, std::min(1.0f, R));
+            Cr = std::max(0.0f, std::min(1.0f, G));
+            Cb = std::max(0.0f, std::min(1.0f, B));
+
+            // Scale back to 0-255, round, and assign back to the pixels
+            image.pixels[i] = (uint8_t)std::round(Y * 255.0f);
+            image.pixels[i + 1] = (uint8_t)std::round(Cr * 255.0f);
+            image.pixels[i + 2] = (uint8_t)std::round(Cb * 255.0f);
+        }
+    }
+
+    void yCrCb_to_rgb(rgb24_image& image)
+    {
+        for (int i = 0; i < image.sx * image.sy * 3; i += 3)
+        {
+            float Y = (float)image.pixels[i] / 255.0f; // Normalize to 0-1
+            float Cr = (float)image.pixels[i + 1] / 255.0f; // Normalize to 0-1
+            float Cb = (float)image.pixels[i + 2] / 255.0f; // Normalize to 0-1
+
+            float R = Y + 1.402f * (Cr - 0.5f);
+            float G = Y - 0.34414f * (Cb - 0.5f) - 0.71414f * (Cr - 0.5f);
+            float B = Y + 1.772f * (Cb - 0.5f);
+
+            R = std::max(0.0f, std::min(1.0f, R));
+            G = std::max(0.0f, std::min(1.0f, G));
+            B = std::max(0.0f, std::min(1.0f, B));
+
+            // Scale back to 0-255, round, and assign back to the pixels
+            image.pixels[i] = (uint8_t)std::round(R * 255.0f);
+            image.pixels[i + 1] = (uint8_t)std::round(G * 255.0f);
+            image.pixels[i + 2] = (uint8_t)std::round(B * 255.0f);
+        }
+    }
 } // namespace tifo

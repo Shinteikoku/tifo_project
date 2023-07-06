@@ -14,9 +14,13 @@ namespace tifo
 {
     void sobel_rgb(rgb24_image& image);
     void sobel_gray(rgb24_image& image);
+    void sobel_hsv(rgb24_image& image);
+    void sobel_yCrCb(rgb24_image& image);
 
     void laplacian_gray(rgb24_image& image, float k);
     void laplacien_filter_rgb(rgb24_image& image, float k);
+    void laplacien_filter_yCrCb(rgb24_image& image, float k);
+    void laplacien_filter_hsv(hsv24_image& image, float k);
 
     gray8_image* gaussian_blur(gray8_image& image, int size, float sigma);
     void rgb_gaussian(rgb24_image& image, int size, float sigma);

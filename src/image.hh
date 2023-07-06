@@ -127,6 +127,7 @@ namespace tifo
     };
 
     typedef rgb24_image hsv24_image;
+    typedef rgb24_image yCrCb24_image;
 
 } // namespace tifo
 #endif /* IMAGE_HH */

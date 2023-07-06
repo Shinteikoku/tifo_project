@@ -144,6 +144,8 @@ namespace tifo
         // Split the RGB image into three separate grayscale images
         rgb_gaussian(image, 5, 2.0);
 
+        rgb_to_YCrCb(image);
+
         auto colors = rgb_to_gray_color(image);
 
         // Apply Laplacian filter to each channel
@@ -171,11 +173,133 @@ namespace tifo
         }
     }
 
+    void laplacien_filter_yCrCb(yCrCb24_image& image, float k)
+    {
+        // Split the RGB image into three separate grayscale images
+        rgb_gaussian(image, 5, 2.0);
+
+        rgb_to_YCrCb(image);
+
+        auto colors = rgb_to_gray_color(image);
+
+        // Apply Laplacian filter to each channel
+        laplacien_filter(*colors[0], k);
+
+        // Combine the blurred channels back into a single RGB image
+        for (int y = 0; y < image.sy; ++y)
+        {
+            for (int x = 0; x < image.sx; ++x)
+            {
+                image.pixels[(y * image.sx + x) * 3] =
+                    colors[0]->pixels[y * image.sx + x];
+            }
+        }
+
+        yCrCb_to_rgb(image);
+
+        for (auto obj : colors)
+        {
+            delete obj;
+        }
+    }
+
+    void sobel_yCrCb(rgb24_image& image)
+    {
+        // Split the RGB image into three separate grayscale images
+        rgb_gaussian(image, 5, 2.0);
+
+        rgb_to_YCrCb(image);
+
+        auto colors = rgb_to_gray_color(image);
+
+        // Apply Laplacian filter to each channel
+        sobel_filter(*colors[0]);
+
+        // Combine the blurred channels back into a single RGB image
+        for (int y = 0; y < image.sy; ++y)
+        {
+            for (int x = 0; x < image.sx; ++x)
+            {
+                image.pixels[(y * image.sx + x) * 3] =
+                    colors[0]->pixels[y * image.sx + x];
+            }
+        }
+
+        yCrCb_to_rgb(image);
+
+        for (auto obj : colors)
+        {
+            delete obj;
+        }
+    }
+
+    void laplacien_filter_hsv(hsv24_image& image, float k)
+    {
+        // Split the RGB image into three separate grayscale images
+        rgb_gaussian(image, 5, 2.0);
+
+        rgb_to_hsv(image);
+
+        auto colors = hsv_to_gray_color(image);
+
+        // Apply Laplacian filter to each channel
+        laplacien_filter(*colors[2], k);
+
+        // Combine the blurred channels back into a single RGB image
+        for (int y = 0; y < image.sy; ++y)
+        {
+            for (int x = 0; x < image.sx; ++x)
+            {
+                image.pixels[(y * image.sx + x) * 3 + 2] =
+                    std::clamp(colors[2]->pixels[y * image.sx + x], (uint8_t)0,
+                               (uint8_t)100);
+            }
+        }
+
+        hsv_to_rgb(image);
+
+        for (auto obj : colors)
+        {
+            delete obj;
+        }
+    }
+
+    void sobel_hsv(hsv24_image& image)
+    {
+        // Split the RGB image into three separate grayscale images
+        rgb_gaussian(image, 5, 2.0);
+
+        rgb_to_hsv(image);
+
+        auto colors = hsv_to_gray_color(image);
+
+        // Apply Laplacian filter to each channel
+        sobel_filter(*colors[2]);
+
+        // Combine the blurred channels back into a single RGB image
+        for (int y = 0; y < image.sy; ++y)
+        {
+            for (int x = 0; x < image.sx; ++x)
+            {
+                image.pixels[(y * image.sx + x) * 3 + 2] =
+                    std::clamp(colors[2]->pixels[y * image.sx + x], (uint8_t)0,
+                               (uint8_t)100);
+            }
+        }
+
+        hsv_to_rgb(image);
+
+        for (auto obj : colors)
+        {
+            delete obj;
+        }
+    }
+
     void laplacian_gray(rgb24_image& image, float k)
     {
         auto gray = gaussian_blur(*rgb_to_gray_no_color(image), 5, 2.0);
 
-        laplacien_filter(*gray, 2.0);
+        laplacien_filter(*gray, k);
 
         for (int i = 0; i < image.sx * image.sy; i++)
         {

@@ -9,27 +9,35 @@
 
 namespace tifo
 {
-    /*void saturation(hsv24_image& image, int satur)
+    void hue(hsv24_image& image, int h)
     {
-        auto s = satur / 100.0;
-
         for (int i = 0; i < image.sx * image.sy * 3; i += 3)
         {
-            auto sat = static_cast<uint8_t>((double)image.pixels[i + 1] * s);
-            if (sat > 100)
-                sat = 100;
-            image.pixels[i + 1] = sat;
+            image.pixels[i] = std::clamp(image.pixels[i] + h, 0, 360);
         }
-    }*/
+    }
 
     void saturation(hsv24_image& image, int s)
     {
         for (int i = 0; i < image.sx * image.sy * 3; i += 3)
         {
-            int sat = static_cast<int>(image.pixels[i + 1]) + s;
-            sat = std::clamp(sat, 0, 100);
-            image.pixels[i + 1] = static_cast<uint8_t>(sat);
+            image.pixels[i + 1] = std::clamp(image.pixels[i + 1] + s, 0, 100);
         }
+    }
+
+    void value(hsv24_image& image, int v)
+    {
+        for (int i = 0; i < image.sx * image.sy * 3; i += 3)
+        {
+            image.pixels[i + 2] = std::clamp(image.pixels[i + 2] + v, 0, 360);
+        }
+    }
+
+    void rgb_hue(rgb24_image& image, int h)
+    {
+        rgb_to_hsv(image);
+        hue(image, h);
+        hsv_to_rgb(image);
     }
 
     void rgb_saturation(rgb24_image& image, int s)
@@ -39,7 +47,14 @@ namespace tifo
         hsv_to_rgb(image);
     }
 
-    void apply_argentique_grain(tifo::rgb24_image& image, float intensity)
+    void rgb_value(rgb24_image& image, int v)
+    {
+        rgb_to_hsv(image);
+        value(image, v);
+        hsv_to_rgb(image);
+    }
+
+    void apply_argentique_grain(tifo::rgb24_image& image, int intensity)
     {
         std::default_random_engine generator;
         std::uniform_int_distribution<int> distribution(-intensity, intensity);
@@ -54,7 +69,7 @@ namespace tifo
         }
     }
 
-    void add_vignette(tifo::rgb24_image& image, float intensity)
+    void add_vignette(tifo::rgb24_image& image, int intensity)
     {
         int centerX = image.sx / 2;
         int centerY = image.sy / 2;
@@ -71,7 +86,7 @@ namespace tifo
                     sqrt(dx * dx + dy * dy) / std::min(centerX, centerY);
 
                 int vignette =
-                    static_cast<int>(intensity * distance * distance);
+                    static_cast<int>((float)intensity * distance * distance);
                 int index = (y * image.sx + x) * 3;
                 image.pixels[index] =
                     std::clamp(pixels[index] - vignette, 0, 255);
@@ -137,6 +152,13 @@ namespace tifo
                 std::clamp(image.pixels[i + channel] + x, 0, 255);
     }
 
+    void yCrCb_increase_channel(yCrCb24_image& image, int x, int channel)
+    {
+        rgb_to_YCrCb(image);
+        increase_channel(image, x, channel);
+        yCrCb_to_rgb(image);
+    }
+
     void argentique_filter(tifo::rgb24_image& image)
     {
         // Convertir en HSV
@@ -164,17 +186,22 @@ namespace tifo
 
     void ir_filter(rgb24_image& image)
     {
-        // Red <=> Blue
-        swap_channels(image, RED, BLUE);
-        // Increase contrast
-        increase_contrast(image, 130);
-        // Desaturate blue
+        // Change to HSV
         rgb_to_hsv(image);
-        saturation(image, -20);
-        // Back to rgb
+        hue(image, -50); // LOWER HUE BY 50
+        saturation(image, -50); // LOWER SATURATION BY 50
+        // Back to RGB
         hsv_to_rgb(image);
-        // Tint the image
-        increase_channel(image, 30, RED);
+
+        swap_channels(image, RED, BLUE);
+
+        increase_channel(image, 20, BLUE);
+
+        rgb_to_YCrCb(image);
+
+        yCrCb_equalize(image);
+
+        yCrCb_to_rgb(image);
     }
 
     void negative_filter(rgb24_image& image)
