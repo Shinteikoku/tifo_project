@@ -266,4 +266,112 @@ namespace tifo
         }
     }
 
+    std::array<uint8_t, 3> interpolate_pixel(const rgb24_image& image, float x,
+                                             float y)
+    {
+        // Get the four pixels enclosing (x, y)
+        int x1 = floor(x);
+        int y1 = floor(y);
+        int x2 = x1 + 1;
+        int y2 = y1 + 1;
+
+        // Calculate the weights for each pixel
+        float w1 = (x2 - x) * (y2 - y);
+        float w2 = (x - x1) * (y2 - y);
+        float w3 = (x2 - x) * (y - y1);
+        float w4 = (x - x1) * (y - y1);
+
+        // Get the color of each pixel
+        std::array<uint8_t, 3> c1 = {
+            image.pixels[(y1 * image.sx + x1) * 3],
+            image.pixels[(y1 * image.sx + x1) * 3 + 1],
+            image.pixels[(y1 * image.sx + x1) * 3 + 2]
+        };
+        std::array<uint8_t, 3> c2 = {
+            image.pixels[(y1 * image.sx + x2) * 3],
+            image.pixels[(y1 * image.sx + x2) * 3 + 1],
+            image.pixels[(y1 * image.sx + x2) * 3 + 2]
+        };
+        std::array<uint8_t, 3> c3 = {
+            image.pixels[(y2 * image.sx + x1) * 3],
+            image.pixels[(y2 * image.sx + x1) * 3 + 1],
+            image.pixels[(y2 * image.sx + x1) * 3 + 2]
+        };
+        std::array<uint8_t, 3> c4 = {
+            image.pixels[(y2 * image.sx + x2) * 3],
+            image.pixels[(y2 * image.sx + x2) * 3 + 1],
+            image.pixels[(y2 * image.sx + x2) * 3 + 2]
+        };
+
+        // Interpolate the color at (x, y)
+        std::array<uint8_t, 3> c;
+        for (int i = 0; i < 3; ++i)
+            c[i] = std::clamp(
+                std::round(c1[i] * w1 + c2[i] * w2 + c3[i] * w3 + c4[i] * w4),
+                0.0f, 255.0f);
+
+        return c;
+    }
+
+    rgb24_image* rotate_image(const rgb24_image& original, int deg)
+    {
+        double rad = (deg * M_PI) / 180.0;
+
+        if (std::abs(rad - 0) < 0.01)
+        {
+            return new rgb24_image(original);
+        }
+        // Calculate dimensions of the new image
+        double sin_angle = std::abs(sin(rad));
+        double cos_angle = std::abs(cos(rad));
+        int new_width = original.sx * cos_angle + original.sy * sin_angle;
+        int new_height = original.sx * sin_angle + original.sy * cos_angle;
+
+        auto rotated =
+            new rgb24_image(new_width, new_height); // Create new image
+        rotated->sx = new_width;
+        rotated->sy = new_height;
+        rotated->pixels =
+            new uint8_t[new_width * new_height * 3]; // Allocate memory
+
+        int original_mid_x = original.sx / 2;
+        int original_mid_y = original.sy / 2;
+        int rotated_mid_x = new_width / 2;
+        int rotated_mid_y = new_height / 2;
+
+        for (int y = 0; y < new_height; ++y)
+        {
+            for (int x = 0; x < new_width; ++x)
+            {
+                // Translate point to origin for the new image
+                int dx = x - rotated_mid_x;
+                int dy = y - rotated_mid_y;
+
+                // Apply rotation
+                float old_x = original_mid_x + (dx * cos(rad) - dy * sin(rad));
+                float old_y = original_mid_y + (dx * sin(rad) + dy * cos(rad));
+
+                // Bilinear interpolation
+                if (old_x >= 0 && old_x < original.sx - 1 && old_y >= 0
+                    && old_y < original.sy - 1)
+                {
+                    std::array<uint8_t, 3> color =
+                        interpolate_pixel(original, old_x, old_y);
+                    rotated->pixels[(y * new_width + x) * 3] = color[0];
+                    rotated->pixels[(y * new_width + x) * 3 + 1] = color[1];
+                    rotated->pixels[(y * new_width + x) * 3 + 2] = color[2];
+                }
+                // Fill the remaining area with a specific color (e.g., black)
+                else
+                {
+                    rotated->pixels[(y * new_width + x) * 3] = 0;
+                    rotated->pixels[(y * new_width + x) * 3 + 1] = 0;
+                    rotated->pixels[(y * new_width + x) * 3 + 2] = 0;
+                }
+            }
+        }
+
+        return rotated;
+    }
+
 } // namespace tifo

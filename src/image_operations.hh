@@ -35,6 +35,7 @@ namespace tifo
     void negative_filter(rgb24_image& image);
     void horizontal_flip(rgb24_image& image);
     void vertical_flip(rgb24_image& image);
+    rgb24_image* rotate_image(const rgb24_image& original, int deg);
 
     // OTHER
     void add_vignette(tifo::rgb24_image& image, int intensity);

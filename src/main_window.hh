@@ -612,6 +612,71 @@ public:
         });
 
         /**
+         ** ROTATE PART
+         **/
+
+        QPushButton* toggleRotateButton = new QPushButton("> Rotate");
+        optionsLayout->addWidget(toggleRotateButton);
+
+        QGroupBox* rotateBox = new QGroupBox;
+        rotateBox->setVisible(false);
+        rotateBox->setMaximumHeight(200);
+
+        QVBoxLayout* rotateLayout = new QVBoxLayout;
+
+        QHBoxLayout* rotateSliderLayout = new QHBoxLayout;
+
+        QLabel* minRotateK = new QLabel("-180°");
+        QLabel* maxRotateK = new QLabel("180°");
+
+        QLabel* valueRotateK = new QLabel("Angle: 0°");
+
+        QSlider* rotateSlider = new QSlider(Qt::Horizontal);
+
+        rotateSlider->setRange(-180, 180);
+        rotateSlider->setValue(0);
+        rotateSlider->setMaximumWidth(300);
+
+        rotateSliderLayout->addWidget(minRotateK);
+        rotateSliderLayout->addWidget(rotateSlider);
+        rotateSliderLayout->addWidget(maxRotateK);
+
+        connect(rotateSlider, &QSlider::valueChanged, [=]() {
+            valueRotateK->setText(
+                QString("Angle: %1°").arg(rotateSlider->value()));
+        });
+
+        connect(rotateSlider, &QSlider::sliderReleased,
+                [=, this]() { rotate_value = rotateSlider->value(); });
+
+        rotateLayout->addLayout(rotateSliderLayout);
+        rotateLayout->addWidget(valueRotateK);
+
+        rotateLayout->addLayout(rotateLayout);
+
+        QPushButton* rotateButton = new QPushButton("Rotate", this);
+        connect(rotateButton, &QPushButton::clicked, this, [this]() {
+            applyRotate(tifo::rotate_image, rotate_value, "Rotate");
+        });
+        rotateLayout->addWidget(rotateButton);
+
+        rotateBox->setLayout(rotateLayout);
+        optionsLayout->addWidget(rotateBox);
+
+        connect(toggleRotateButton, &QPushButton::clicked, [=]() {
+            bool isVisible = rotateBox->isVisible();
+            rotateBox->setVisible(!isVisible);
+            if (isVisible)
+            {
+                toggleRotateButton->setText("> Rotate");
+            }
+            else
+            {
+                toggleRotateButton->setText("V Rotate");
+            }
+        });
+
+        /**
          ** SWAP CHANNELS PART
          **/
 
@@ -1649,6 +1714,41 @@ public slots:
                  << " process execution time: " << timer1.elapsed() << "ms";
     }
 
+    void applyRotate(const std::function<tifo::rgb24_image*(tifo::rgb24_image&,
+                                                            int)>& processing,
+                     int arg, const char* str)
+    {
+        qDebug() << arg;
+
+        QElapsedTimer timer1;
+        timer1.start();
+        auto tmp = qimage_to_rgb(images[index]);
+        QElapsedTimer timer2;
+        timer2.start();
+
+        auto new_image = processing(*tmp, arg);
+
+        m_image = rgb_to_qimage(*new_image);
+
+        m_imageLabel->setPixmap(QPixmap::fromImage(m_image));
+
+        qDebug() << str << " execution time: " << timer2.elapsed() << "ms";
+
+        index++;
+
+        if (images.size() == index)
+        {
+            images.push_back(m_image);
+        }
+        else
+        {
+            images[index] = m_image;
+        }
+
+        qDebug() << "Whole " << str
+                 << " process execution time: " << timer1.elapsed() << "ms";
+    }
+
 private:
     QImage m_image;
     ResizableImageLabel* m_imageLabel;
@@ -1687,6 +1787,7 @@ private:
     int gaussianSize_value;
 
     int laplacianK_value;
+    int rotate_value;
 
     std::vector<std::vector<int>> sliders_values;
 };
